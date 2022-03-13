@@ -6,18 +6,28 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://example.com">
-  <title>Archives | 臭屁王放屁の地方</title>
+  <title>微服务浅谈（一）——Nacos | 臭屁王放屁の地方</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="就职于不知名小公司，无事来此放放屁">
-<meta property="og:type" content="website">
-<meta property="og:title" content="臭屁王放屁の地方">
-<meta property="og:url" content="http://example.com/archives/index.html">
+  <meta name="description" content="服务注册中心注册中心基本原理 在使用注册中心时，一共有三种角色：服务提供者（Service Provider）、服务消费者（Service Consumer）、注册中心（Registry）。  服务发现原理：服务发现机制就是通过一个中间件去记录服务提供者的ip地址，服务名以及心跳等数据（比如用mysql去存储这些信息），然后服务消费者会去这个中间平台去查询相关信息，然后再去访问对应的地址，这就是服">
+<meta property="og:type" content="article">
+<meta property="og:title" content="微服务浅谈（一）——Nacos">
+<meta property="og:url" content="http://example.com/2022/03/13/SpringCloud_Nacos/index.html">
 <meta property="og:site_name" content="臭屁王放屁の地方">
-<meta property="og:description" content="就职于不知名小公司，无事来此放放屁">
+<meta property="og:description" content="服务注册中心注册中心基本原理 在使用注册中心时，一共有三种角色：服务提供者（Service Provider）、服务消费者（Service Consumer）、注册中心（Registry）。  服务发现原理：服务发现机制就是通过一个中间件去记录服务提供者的ip地址，服务名以及心跳等数据（比如用mysql去存储这些信息），然后服务消费者会去这个中间平台去查询相关信息，然后再去访问对应的地址，这就是服">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/imgs/SpringCloud_Nacos/2f36efa9ac2c4d1daa82df752b8eb386tplv-k3u1fbpfcp-watermark-1647192558918169.image">
+<meta property="og:image" content="http://example.com/imgs/SpringCloud_Nacos/ee1233cf881a48f2a433dc96267c88bftplv-k3u1fbpfcp-watermark-1647192558918171.image">
+<meta property="og:image" content="http://example.com/imgs/SpringCloud_Nacos/43a9135351c24f209cba8da1cde68e83tplv-k3u1fbpfcp-watermark-1647192558918173.image">
+<meta property="og:image" content="http://example.com/imgs/SpringCloud_Nacos/61d077e3145a494ba5a5524695edd656tplv-k3u1fbpfcp-watermark-1647192558918175.image">
+<meta property="og:image" content="http://example.com/imgs/SpringCloud_Nacos/52d9a3d96c2448578ba9624c85ae14e7tplv-k3u1fbpfcp-watermark-1647192558918177.image">
+<meta property="og:image" content="http://example.com/imgs/SpringCloud_Nacos/7b78c6cd35ea423e9ef4d3b07944fa77tplv-k3u1fbpfcp-watermark-1647192558918179.image">
+<meta property="og:image" content="http://example.com/imgs/SpringCloud_Nacos/833e6261105644559ba225542d4f1dcetplv-k3u1fbpfcp-watermark-1647192558918181.image">
+<meta property="article:published_time" content="2022-03-13T11:31:08.440Z">
+<meta property="article:modified_time" content="2022-03-13T17:36:15.309Z">
 <meta property="article:author" content="臭屁王">
 <meta property="article:tag" content="面向对象，后端，Java">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/imgs/SpringCloud_Nacos/2f36efa9ac2c4d1daa82df752b8eb386tplv-k3u1fbpfcp-watermark-1647192558918169.image">
   
     <link rel="alternative" href="/atom.xml" title="臭屁王放屁の地方" type="application/atom+xml">
   
@@ -149,76 +159,267 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
+            <article id="post-SpringCloud_Nacos" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
   
+    <h1 class="article-title" itemprop="name">
+      微服务浅谈（一）——Nacos
+    </h1>
   
-    
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2022" class="archive-year">2022</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2022/03/13/SpringCloud_Nacos/" class="archive-article-date">
+
+        
+        <a href="/2022/03/13/SpringCloud_Nacos/" class="archive-article-date">
   	<time datetime="2022-03-13T11:31:08.440Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-03-13</time>
 </a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2022/03/13/SpringCloud_Nacos/">微服务浅谈（一）——Nacos</a>
-    </h1>
-  
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="服务注册中心"><a href="#服务注册中心" class="headerlink" title="服务注册中心"></a>服务注册中心</h1><h2 id="注册中心基本原理"><a href="#注册中心基本原理" class="headerlink" title="注册中心基本原理"></a>注册中心基本原理</h2><blockquote>
+<p>在使用注册中心时，一共有三种角色：服务提供者（Service Provider）、服务消费者（Service Consumer）、注册中心（Registry）。</p>
+</blockquote>
+<p>服务发现原理：服务发现机制就是通过一个中间件去<strong>记录服务提供者的ip地址</strong>，<strong>服务名</strong>以及<strong>心跳</strong>等数据（比如用mysql去存储这些信息），然后服务消费者会去这个中间平台去查询相关信息，然后再去访问对应的地址，这就是服务注册和服务发现。</p>
+<blockquote>
+<p>Nacos 提供对服务的实时的健康检查，阻止向不健康的主机或服务实例发送请求。Nacos 支持传输层 (PING 或 TCP)和应用层 (如 HTTP、MySQL、用户自定义）的健康检查。 对于复杂的云环境和网络拓扑环境中（如 VPC、边缘网络等）服务的健康检查，Nacos 提供了 agent 上报模式和服务端主动检测2种健康检查模式。Nacos 还提供了统一的健康检查仪表盘，帮助您根据健康状态管理服务的可用性及流量。</p>
+</blockquote>
+<p><strong>服务提供者</strong>：向注册中心注册为一个服务实例，并且向外部暴露调用接口。</p>
+<p><strong>服务消费者</strong>：向注册中心订阅需要调用的服务，并缓存服务的实例列表再内存中。后续，Consumer 向对应服务的 Provider 发起<strong>调用</strong>时，从内存中的该服务的实例列表选择一个，进行远程调用。</p>
+<p><strong>注册中心</strong>：当注册的实例超过一定时间未<strong>心跳</strong>（nacos默认30s心跳一次，若下一次未收到，将不再路由请求至该实例），则注册中心判断这个服务已下线，将从服务实例列表移除。</p>
+<p>不同的注册中心可能在实现原理上会略有差异。例如说，<a href="https://link.juejin.cn/?target=https://github.com/Netflix/eureka/">Eureka</a> 注册中心，并不提供通知功能，而是 Eureka Client 自己定期轮询，实现本地缓存的更新。</p>
+<p>当然，一个服务消费者，也可以是一个服务提供者。</p>
+<h2 id="nacos"><a href="#nacos" class="headerlink" title="nacos"></a><strong>nacos</strong></h2><ul>
+<li>  作为注册中心时，Namespace + Group + Service</li>
+<li>  作为<strong>配置中心</strong>时，Namespace + Group + DataId</li>
+</ul>
+<img src="/imgs/SpringCloud_Nacos/2f36efa9ac2c4d1daa82df752b8eb386tplv-k3u1fbpfcp-watermark-1647192558918169.image" alt="7695ce09d29a4f4fac9038c00cd12959tplv-k3u1fbpfcp-watermark.jpg" style="zoom:50%;" />
+元数据：
 
-        <div class="article-info info-on-right">
-          
-          
+<p>Nacos数据（如配置和服务）描述信息，如服务版本、权重、容灾策略、负载均衡策略、鉴权配置、各种自定义标签（label），从作用范围来看，分为服务级别的元信息、集群的元信息及实例的元信息。</p>
+<h2 id="负载均衡"><a href="#负载均衡" class="headerlink" title="负载均衡"></a><strong>负载均衡</strong></h2><p>服务器端负载均衡：</p>
+<p>由中间件Ng进行路由</p>
+<img src="/imgs/SpringCloud_Nacos/ee1233cf881a48f2a433dc96267c88bftplv-k3u1fbpfcp-watermark-1647192558918171.image" alt="6a0ccdda06b0429faaef93d0f6879a62tplv-k3u1fbpfcp-watermark.jpg" style="zoom: 25%;" />
 
+<p>客户端负载均衡：</p>
+<p>根据负载均衡规则，自行请求。</p>
+<img src="/imgs/SpringCloud_Nacos/43a9135351c24f209cba8da1cde68e83tplv-k3u1fbpfcp-watermark-1647192558918173.image" alt="e39dbc0a7c424572b94493b4420f6bf0tplv-k3u1fbpfcp-watermark-16457160901771.jpg" style="zoom:25%;" />
+
+<p>Ribbon：提供丰富的负载均衡算法。</p>
+<p>手写一个客户端侧负载均衡器</p>
+<ul>
+<li><p>手写负载均衡器部分代码如图：</p>
+<p>  这段代码的意思就是在实例列表中<strong>随机进行请求</strong>。这段代码只是粗略展示负载均衡的其中一个算法。</p>
+</li>
+</ul>
+<img src="/imgs/SpringCloud_Nacos/61d077e3145a494ba5a5524695edd656tplv-k3u1fbpfcp-watermark-1647192558918175.image" alt="9a445f7291504cd48d2d5de6a19c672dtplv-k3u1fbpfcp-watermark.jpg" style="zoom:50%;" />
+
+<blockquote>
+<p>手写负载均衡器主要原理就是获取到此服务的所有url，然后以轮询、随机等方式进行调用指定的url</p>
+</blockquote>
+<h2 id="Ribbon与Nginx的区别"><a href="#Ribbon与Nginx的区别" class="headerlink" title="Ribbon与Nginx的区别"></a>Ribbon与Nginx的区别</h2><p>既然提到了负载均衡，怎么能少得了Nginx呢，Ribbon和Nginx之间的不同在于，Nginx是集中式的对接收的请求进行负载均衡，而Ribbon是在消费者端进行负载均衡，形象一点就是如下图。</p>
+<h3 id="Nginx"><a href="#Nginx" class="headerlink" title="Nginx"></a>Nginx</h3><p>Nginx的工作模型如下图：</p>
+<img src="/imgs/SpringCloud_Nacos/52d9a3d96c2448578ba9624c85ae14e7tplv-k3u1fbpfcp-watermark-1647192558918177.image" alt="image.png" style="zoom: 80%;" />
+
+
+<h3 id="Ribbon"><a href="#Ribbon" class="headerlink" title="Ribbon"></a>Ribbon</h3><p>Ribbon的工作模型如下图</p>
+<img src="/imgs/SpringCloud_Nacos/7b78c6cd35ea423e9ef4d3b07944fa77tplv-k3u1fbpfcp-watermark-1647192558918179.image" alt="image.png" style="zoom:80%;" />
+
+<p>Ribbon的负载均衡与Ng的负载均衡之不同就是，Ng是被动负载均衡，Ribbon是主动负载均衡。</p>
+<p>Ribbon会在收到Http请求后，去拉取注册中心中的服务实例List，获取到List以后，会使用负载均衡策略，在List中挑选一个服务实例进行请求。</p>
+<img src="/imgs/SpringCloud_Nacos/833e6261105644559ba225542d4f1dcetplv-k3u1fbpfcp-watermark-1647192558918181.image" alt="image-20220308222825571.png"  />
+**Ribbon默认是懒加载**，懒加载会使项目启动速度加快，但是同时在第一次请求时，会去拉取注册中心的服务实例，以及初始化负载均衡容器，导致请求响应速度相对较慢。**同时可选定服务进行配置饥饿加载。**
+
+<p>同时Ribbon有多种负载均衡的策略模式可供选择，默认的就是<strong>同区域轮训模式：ZoneAwareLoadBalancer</strong> 是一个根据<strong>区域（Zone）</strong> 来进行负载均衡器，因为如果不同机房跨区域部署服务列表，跨区域的方式访问会产生更高的延迟，ZoneAwareLoadBalancer 就是为了解决此类问题，不过默认都是同一区域</p>
+<p>Ribbon负载均衡策略：</p>
+<table>
+<thead>
+<tr>
+<th>策略类</th>
+<th>命名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RandomRule</td>
+<td>随机策略</td>
+<td>随机选择server</td>
+</tr>
+<tr>
+<td>RoundRobinRule</td>
+<td>轮询策略</td>
+<td>轮询选择， 轮询index，选择index对应位置的Server；</td>
+</tr>
+<tr>
+<td>RetryRule</td>
+<td>重试策略</td>
+<td>对选定的负载均衡策略机上重试机制，在一个配置时间段内当选择Server不成功，则一直尝试使用subRule的方式选择一个可用的server；</td>
+</tr>
+<tr>
+<td>BestAvailableRule</td>
+<td>最低并发策略</td>
+<td>逐个考察server，如果server断路器打开，则忽略，再选择其中并发链接最低的server</td>
+</tr>
+<tr>
+<td>AvailabilityFilteringRule</td>
+<td>可用过滤策略</td>
+<td>过滤掉一直失败并被标记为circuit tripped的server，过滤掉那些高并发链接的server（active connections超过配置的阈值）或者使用一个AvailabilityPredicate来包含过滤server的逻辑，其实就就是检查status里记录的各个Server的运行状态；</td>
+</tr>
+<tr>
+<td>ResponseTimeWeightedRule</td>
+<td>响应时间加权重策略</td>
+<td>根据server的响应时间分配权重，响应时间越长，权重越低，被选择到的概率也就越低。响应时间越短，权重越高，被选中的概率越高，这个策略很贴切，综合了各种因素，比如：网络，磁盘，io等，都直接影响响应时间</td>
+</tr>
+<tr>
+<td>ZoneAvoidanceRule</td>
+<td>区域权重策略</td>
+<td>综合判断server所在区域的性能，和server的可用性，轮询选择server并且判断一个AWS Zone的运行性能是否可用，剔除不可用的Zone中的所有server</td>
+</tr>
+</tbody></table>
+
+      
+
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
+        </div>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://example.com/2022/03/13/SpringCloud_Nacos/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2022/03/13/hello-world/" class="archive-article-date">
-  	<time datetime="2022-03-13T10:57:43.924Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-03-13</time>
-</a>
+<nav id="article-nav">
+  
+  
+    <a href="/2022/03/13/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Hello World</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2022/03/13/hello-world/">Hello World</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-          
-
+        
+        
+        <div class="toc-container tooltip-left">
+            <i class="icon-font icon-category"></i>
+            <div class="tooltip tooltip-east">
+                <span class="tooltip-item">
+                </span>
+                <span class="tooltip-content">
+                    <div class="toc-article">
+                    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83"><span class="toc-number">1.</span> <span class="toc-text">服务注册中心</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="toc-number">1.1.</span> <span class="toc-text">注册中心基本原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#nacos"><span class="toc-number">1.2.</span> <span class="toc-text">nacos</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1"><span class="toc-number">1.3.</span> <span class="toc-text">负载均衡</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Ribbon%E4%B8%8ENginx%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">1.4.</span> <span class="toc-text">Ribbon与Nginx的区别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Nginx"><span class="toc-number">1.4.1.</span> <span class="toc-text">Nginx</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Ribbon"><span class="toc-number">1.4.2.</span> <span class="toc-text">Ribbon</span></a></li></ol></li></ol></li></ol>
+                    </div>
+                </span>
+            </div>
         </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
+        
+    </div>
+</aside>
+
+
+
   
   
-    </div></section>
   
 
-    
+  
+
+  
+
+  
 
 
           </div>
@@ -241,8 +442,8 @@
 	var yiliaConfig = {
 		mathjax: true,
 		isHome: false,
-		isPost: false,
-		isArchive: true,
+		isPost: true,
+		isArchive: false,
 		isTag: false,
 		isCategory: false,
 		open_in_new: true,
