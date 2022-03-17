@@ -151,6 +151,128 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-SpringCloud-OpenFeign" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2022/03/15/SpringCloud-OpenFeign/">微服务浅谈（二）——服务调用&amp;OpenFeign</a>
+    </h1>
+  
+
+        
+        <a href="/2022/03/15/SpringCloud-OpenFeign/" class="archive-article-date">
+  	<time datetime="2022-03-14T16:41:15.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-03-15</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="服务调用的两种常用方式：RPC-amp-HTTP"><a href="#服务调用的两种常用方式：RPC-amp-HTTP" class="headerlink" title="服务调用的两种常用方式：RPC&amp;HTTP"></a>服务调用的两种常用方式：<strong>RPC</strong>&amp;<strong>HTTP</strong></h2><p>HTTP就不过多介绍了，稍微讲一下RPC的架构。</p>
+<h3 id="RPC架构"><a href="#RPC架构" class="headerlink" title="RPC架构"></a><strong>RPC架构</strong></h3><p>一个完整的RPC架构里面包含了四个核心的组件，分别是Client，Client Stub，Server以及Server Stub，这个Stub可以理解为存根。</p>
+<ul>
+<li>客户端(Client)，服务的调用方。</li>
+<li>客户端存根(Client Stub)，存放服务端的地址消息，再将客户端的请求参数打包成网络消息，然后通过网络远程发送给服务方。</li>
+<li>服务端(Server)，真正的服务提供者。</li>
+<li>服务端存根(Server Stub)，接收客户端发送过来的消息，将消息解包，并调用本地的方法。</li>
+</ul>
+<p>纵观整个过程，实际上就是客户端发起调用，然后本次调用<strong>经过Client Stub封装</strong>，发送给Server，然后Server Stub会<strong>解析发送过来的内容</strong>，并且将数据进行返回。</p>
+<img src="/imgs/SpringCloud-OpenFeign/v2-1ae91aa17808a65ac34b419355cf9b40_720w-16472762422233.jpg" alt="img" style="zoom: 80%;" />
+
+
+
+<p><strong>RPC的目标就是要把2、3、4、7、8、9这些步骤都封装起来。</strong></p>
+<p>RPC调用是使用自定义的数据格式进行传输，是基于原生TCP进行通信，速度较快，效率较高。</p>
+<p>HTTP则是一种较为通用的调用方式，在跨语言上存在优势，只要提供restful风格的接口，则可以进行请求。</p>
+<h3 id="关于RPC与Http的技术选型："><a href="#关于RPC与Http的技术选型：" class="headerlink" title="关于RPC与Http的技术选型："></a><strong>关于RPC与Http的技术选型：</strong></h3><p>如果需要使用RPC调用，则需要服务提供方与消费方都是使用RPC调用，即需要双方使用相同的技术，如都使用Dubbo调用。</p>
+<p>而Http则无需关注语言的实现，只需请求数据遵循restful规范即可。</p>
+<p><strong>如何选择？</strong></p>
+<p>既然两种方式都可以实现远程调用，我们该如何选择呢？</p>
+<ul>
+<li>速度来看，RPC要比http更快，虽然底层都是TCP，但是http协议的信息往往比较臃肿</li>
+<li>难度来看，RPC实现较为复杂，http相对比较简单</li>
+<li>灵活性来看，http更胜一筹，因为它不关心实现细节，跨平台、跨语言。</li>
+</ul>
+<p>因此，两者都有不同的使用场景：</p>
+<ul>
+<li>如果对效率要求更高，并且开发过程使用统一的技术栈，那么用RPC还是不错的。</li>
+<li>如果需要更加灵活，跨语言、跨平台，显然http更合适</li>
+</ul>
+<p>那么我们该怎么选择呢？</p>
+<p><strong>微服务，更加强调的是独立、自治、灵活。而RPC方式的限制较多，因此微服务框架中，一般都会采用基于Http的Rest风格服务。</strong></p>
+<h3 id="RestTemplate存在的问题"><a href="#RestTemplate存在的问题" class="headerlink" title="RestTemplate存在的问题"></a>RestTemplate存在的问题</h3><p>其实Rest存在的问题，只需要三个字概况，<strong>不够优雅</strong>（四个字），当调用服务的url拼接较多的参数时，这样的url会变得非常难以维护，这样拼接的url在实际生产中并不少见。</p>
+<h2 id="OpenFeign简介"><a href="#OpenFeign简介" class="headerlink" title="OpenFeign简介"></a>OpenFeign简介</h2><p>OpenFeign是一种可以在微服务之间实现<strong>“无感知调用“</strong>的一个中间件。</p>
+<blockquote>
+<p>即引入这种中间件以后，各个接口之间的调用就像在单机上部署一样，无需过多的关注调用的地址和端口，这就是所谓的<strong>”无感知调用“</strong>，或许这样描述并不是非常恰当，但达意即可。</p>
+</blockquote>
+<p>SpringMVC的注解，如<code>@RequestMapping</code>等等。OpenFeign的<code>@FeignClient</code>可以解析SpringMVC的<code>@RequestMapping</code>注解下的接口，并通过动态代理的方式产生实现类，实现类中做负载均衡并调用其他服务。</p>
+<p>OpenFeign沿用SpringMVC的注解，大大地降低了学习成本，作为一个组件它是一个好组件😀</p>
+<p>OpenFeign的底层还是使用了<a target="_blank" rel="noopener" href="https://intlouis.github.io/2022/03/13/SpringCloud_Nacos/#Ribbon%E4%B8%8ENginx%E7%9A%84%E5%8C%BA%E5%88%AB">Ribbon</a>，Ribbon的介绍在博客相关文章有介绍过，所以OpenFeign是一个<strong>调用+客户端负载均衡的一个微服务组件</strong>。</p>
+<p>OpenFeign把RestTemplete，Ribbon，Hystrix糅合在了一起，在使用时就可以更加方便，优雅地完成整个服务的暴露，调用等。避免做一些重复的复制粘贴接口URL，或者重复定义接口等。还是非常值得去学习的。</p>
+<p>但Hystrix一般由<strong>Sentinel</strong>代替了，关于Sentinel的博客文章后续会发布。</p>
+<p>OpenFeign的简单使用</p>
+<p>1、在启动类上增加<code>@EnableFeignClients</code>注解（注：以下例子来自<a target="_blank" rel="noopener" href="https://spring.io/projects/spring-cloud-openfeign">OpenFeign官方文档</a>）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="meta">@EnableFeignClients</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WebApplication</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">		SpringApplication.run(WebApplication.class, args);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@FeignClient(&quot;name&quot;)</span></span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">interface</span> <span class="title class_">NameService</span> &#123;</span><br><span class="line">		<span class="meta">@RequestMapping(&quot;/&quot;)</span></span><br><span class="line">		<span class="keyword">public</span> String <span class="title function_">getName</span><span class="params">()</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>2、StoreClient就是供消费者调用的接口，每个接口上添加MVC相应注解以及接口请求地址。一般来说会专门创建一个这样的interface以供消费者调用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@FeignClient(&quot;stores&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">StoreClient</span> &#123;</span><br><span class="line">    <span class="meta">@RequestMapping(method = RequestMethod.GET, value = &quot;/stores&quot;)</span></span><br><span class="line">    List&lt;Store&gt; <span class="title function_">getStores</span><span class="params">()</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@RequestMapping(method = RequestMethod.GET, value = &quot;/stores&quot;)</span></span><br><span class="line">    Page&lt;Store&gt; <span class="title function_">getStores</span><span class="params">(Pageable pageable)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@RequestMapping(method = RequestMethod.POST, value = &quot;/stores/&#123;storeId&#125;&quot;, consumes = &quot;application/json&quot;)</span></span><br><span class="line">    Store <span class="title function_">update</span><span class="params">(<span class="meta">@PathVariable(&quot;storeId&quot;)</span> Long storeId, Store store)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@RequestMapping(method = RequestMethod.DELETE, value = &quot;/stores/&#123;storeId:\\d+&#125;&quot;)</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">delete</span><span class="params">(<span class="meta">@PathVariable</span> Long storeId)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>3、在消费者的Controller层，注入StoreClient这个对象，使用这个对象直接进行方法调用即可。</p>
+<h3 id="Feign的自定义配置"><a href="#Feign的自定义配置" class="headerlink" title="Feign的自定义配置"></a>Feign的自定义配置</h3><p><strong>日志级别：</strong></p>
+<p>NONE：不打印任何日志。</p>
+<p>BASIC：只记录请求方法、URL、响应状态码和执行时间</p>
+<p>HEADERS：记录基本信息，请求和响应标题</p>
+<p>FULL： 记录请求和响应标题、正文和行数据</p>
+<p>还有其他的Feign自定义配置，在此就不一一赘述。</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2022/03/15/SpringCloud-OpenFeign/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-SpringCloud_Nacos" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -193,11 +315,11 @@
 <p>Nacos数据（如配置和服务）描述信息，如服务版本、权重、容灾策略、负载均衡策略、鉴权配置、各种自定义标签（label），从作用范围来看，分为服务级别的元信息、集群的元信息及实例的元信息。</p>
 <h2 id="负载均衡"><a href="#负载均衡" class="headerlink" title="负载均衡"></a><strong>负载均衡</strong></h2><p>服务器端负载均衡：</p>
 <p>由中间件Ng进行路由</p>
-<img src="/imgs/SpringCloud_Nacos/ee1233cf881a48f2a433dc96267c88bftplv-k3u1fbpfcp-watermark-1647192558918171.image" alt="6a0ccdda06b0429faaef93d0f6879a62tplv-k3u1fbpfcp-watermark.jpg" style="zoom: 25%;" />
+<img src="/imgs/SpringCloud_Nacos/ee1233cf881a48f2a433dc96267c88bftplv-k3u1fbpfcp-watermark-1647192558918171.image" alt="6a0ccdda06b0429faaef93d0f6879a62tplv-k3u1fbpfcp-watermark.jpg" style="zoom: 33%;" />
 
 <p>客户端负载均衡：</p>
 <p>根据负载均衡规则，自行请求。</p>
-<img src="/imgs/SpringCloud_Nacos/43a9135351c24f209cba8da1cde68e83tplv-k3u1fbpfcp-watermark-1647192558918173.image" alt="e39dbc0a7c424572b94493b4420f6bf0tplv-k3u1fbpfcp-watermark-16457160901771.jpg" style="zoom:25%;" />
+<img src="/imgs/SpringCloud_Nacos/43a9135351c24f209cba8da1cde68e83tplv-k3u1fbpfcp-watermark-1647192558918173.image" alt="e39dbc0a7c424572b94493b4420f6bf0tplv-k3u1fbpfcp-watermark-16457160901771.jpg" style="zoom: 33%;" />
 
 <p>Ribbon：提供丰富的负载均衡算法。</p>
 <p>手写一个客户端侧负载均衡器</p>
@@ -213,17 +335,19 @@
 </blockquote>
 <h2 id="Ribbon与Nginx的区别"><a href="#Ribbon与Nginx的区别" class="headerlink" title="Ribbon与Nginx的区别"></a>Ribbon与Nginx的区别</h2><p>既然提到了负载均衡，怎么能少得了Nginx呢，Ribbon和Nginx之间的不同在于，Nginx是集中式的对接收的请求进行负载均衡，而Ribbon是在消费者端进行负载均衡，形象一点就是如下图。</p>
 <h3 id="Nginx"><a href="#Nginx" class="headerlink" title="Nginx"></a>Nginx</h3><p>Nginx的工作模型如下图：</p>
-<img src="/imgs/SpringCloud_Nacos/52d9a3d96c2448578ba9624c85ae14e7tplv-k3u1fbpfcp-watermark-1647192558918177.image" alt="image.png" style="zoom: 80%;" />
+<img src="/imgs/SpringCloud_Nacos/52d9a3d96c2448578ba9624c85ae14e7tplv-k3u1fbpfcp-watermark-1647192558918177.image" alt="image.png"  />
 
 
 <h3 id="Ribbon"><a href="#Ribbon" class="headerlink" title="Ribbon"></a>Ribbon</h3><p>Ribbon的工作模型如下图</p>
-<img src="/imgs/SpringCloud_Nacos/7b78c6cd35ea423e9ef4d3b07944fa77tplv-k3u1fbpfcp-watermark-1647192558918179.image" alt="image.png" style="zoom:80%;" />
+<img src="/imgs/SpringCloud_Nacos/7b78c6cd35ea423e9ef4d3b07944fa77tplv-k3u1fbpfcp-watermark-1647192558918179.image" alt="image.png"  />
 
 <p>Ribbon的负载均衡与Ng的负载均衡之不同就是，Ng是被动负载均衡，Ribbon是主动负载均衡。</p>
 <p>Ribbon会在收到Http请求后，去拉取注册中心中的服务实例List，获取到List以后，会使用负载均衡策略，在List中挑选一个服务实例进行请求。</p>
 <img src="/imgs/SpringCloud_Nacos/833e6261105644559ba225542d4f1dcetplv-k3u1fbpfcp-watermark-1647192558918181.image" alt="image-20220308222825571.png"  />
-**Ribbon默认是懒加载**，懒加载会使项目启动速度加快，但是同时在第一次请求时，会去拉取注册中心的服务实例，以及初始化负载均衡容器，导致请求响应速度相对较慢。**同时可选定服务进行配置饥饿加载。**
 
+
+
+<p><strong>Ribbon默认是懒加载</strong>，懒加载会使项目启动速度加快，但是同时在第一次请求时，会去拉取注册中心的服务实例，以及初始化负载均衡容器，导致请求响应速度相对较慢。<strong>同时可选定服务进行配置饥饿加载。</strong></p>
 <p>同时Ribbon有多种负载均衡的策略模式可供选择，默认的就是<strong>同区域轮训模式：ZoneAwareLoadBalancer</strong> 是一个根据<strong>区域（Zone）</strong> 来进行负载均衡器，因为如果不同机房跨区域部署服务列表，跨区域的方式访问会产生更高的延迟，ZoneAwareLoadBalancer 就是为了解决此类问题，不过默认都是同一区域</p>
 <p>Ribbon负载均衡策略：</p>
 <table>
@@ -283,83 +407,6 @@
       
         <p class="article-more-link">
           <a class="article-more-a" href="/2022/03/13/SpringCloud_Nacos/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-hello-world" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2022/03/13/hello-world/">Hello World</a>
-    </h1>
-  
-
-        
-        <a href="/2022/03/13/hello-world/" class="archive-article-date">
-  	<time datetime="2022-03-13T10:57:43.924Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2022-03-13</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-<p>??</p>
-<p><img src="../../../../img/1.png" alt="1"></p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2022/03/13/hello-world/">展开全文 >></a>
         </p>
       
 
