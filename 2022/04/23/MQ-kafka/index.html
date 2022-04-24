@@ -1,0 +1,226 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>消息中间件（1）——之Kafka | Welcome!</title><meta name="keywords" content="-消息队列 -Kafka"><meta name="author" content="Louis,378435665@qq.com"><meta name="copyright" content="Louis"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="讲完微服务四大基本组件以后，接下来会发布消息中间件的系列文章，所以第一篇的话选择介绍Kafka。 言归正传  以经典的电商秒杀场景，设想10000件商品在几秒内被秒杀抢购完，我们如何保证在这么短的时间内扛下如此之高的并发，如果机器性能较差，上千甚至上万的QPS直接打在机器上，tomcat线程池一定会被打满，引发生产事故。 此时就需要用到消息中间件，无论有多少请求，统统暂存至MQ，然后服务器慢慢消费">
+<meta property="og:type" content="article">
+<meta property="og:title" content="消息中间件（1）——之Kafka">
+<meta property="og:url" content="https://intlouis.github.io/2022/04/23/MQ-kafka/index.html">
+<meta property="og:site_name" content="Welcome!">
+<meta property="og:description" content="讲完微服务四大基本组件以后，接下来会发布消息中间件的系列文章，所以第一篇的话选择介绍Kafka。 言归正传  以经典的电商秒杀场景，设想10000件商品在几秒内被秒杀抢购完，我们如何保证在这么短的时间内扛下如此之高的并发，如果机器性能较差，上千甚至上万的QPS直接打在机器上，tomcat线程池一定会被打满，引发生产事故。 此时就需要用到消息中间件，无论有多少请求，统统暂存至MQ，然后服务器慢慢消费">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://intlouis.github.io/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg">
+<meta property="article:published_time" content="2022-04-23T14:09:45.000Z">
+<meta property="article:modified_time" content="2022-04-24T16:54:44.783Z">
+<meta property="article:author" content="Louis">
+<meta property="article:tag" content="-消息队列 -Kafka">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://intlouis.github.io/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://intlouis.github.io/2022/04/23/MQ-kafka/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery@2/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery@2/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '消息中间件（1）——之Kafka',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2022-04-25 00:54:44'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 5.4.1"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/img.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data is-center"><div class="data-item"><a href="/archives/"><div class="headline">文章</div><div class="length-num">5</div></a></div><div class="data-item"><a href="/tags/"><div class="headline">标签</div><div class="length-num">8</div></a></div><div class="data-item"><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Welcome!</a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">消息中间件（1）——之Kafka</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-04-23T14:09:45.000Z" title="发表于 2022-04-23 22:09:45">2022-04-23</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2022-04-24T16:54:44.783Z" title="更新于 2022-04-25 00:54:44">2022-04-25</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">微服务</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">1.8k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>5分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="消息中间件（1）——之Kafka"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><p>讲完微服务四大基本组件以后，接下来会发布消息中间件的系列文章，所以第一篇的话选择介绍Kafka。</p>
+<p>言归正传</p>
+<blockquote>
+<p>以经典的电商秒杀场景，设想10000件商品在几秒内被秒杀抢购完，我们如何保证在这么短的时间内扛下如此之高的并发，<strong>如果机器性能较差，上千甚至上万的QPS直接打在机器上，tomcat线程池一定会被打满，引发生产事故。</strong></p>
+<p>此时就需要用到消息中间件，无论有多少请求，统统暂存至MQ，然后服务器慢慢消费，既保证了消息不丢失，也大大减轻了机器的压力。</p>
+<p>MQ是高并发场景下常用的中间件，这样的场景一定会依赖MQ，同时MQ也常会用于服务之间的数据同步。</p>
+</blockquote>
+<h1 id="基本术语"><a href="#基本术语" class="headerlink" title="基本术语"></a>基本术语</h1><p><strong>消息：</strong>Kafka 中的数据单元被称为<code>消息</code>，也被称为记录，可以把它看作数据库表中某一行的记录。记录可以是用户发起的http请求。</p>
+<p><strong>主题（Topic）：</strong>消息的种类称为 <code>主题</code>,可以说一个主题代表了一类消息。相当于是对消息进行分类。主题就像是数据库中的表。</p>
+<p><strong>分区（partition）：</strong>同一个主题中的分区均匀分布在机器集群，这样可以更好实现服务器集群组的负载均衡。</p>
+<blockquote>
+<p>分区的作用就是让消费者集群中的节点都能消费到同一个topic的消息，假如没有分区，那topicA部署在其中一个节点上，这个节点服务器的压力就会很大，而分区是让消费者集群中都部署topicA，这样消费者就会均匀的把消息发送到每个topicA下。</p>
+<p>相当于创建了n个文件夹去存储这些消息。不会把所有的消息都放在一个文件夹里。</p>
+</blockquote>
+<img src="../imgs/MQ-kafka/16eb068bab005524tplv-t2oaga2asx-zoom-in-crop-mark1304000.awebp" alt="img" style="zoom: 50%;" />
+
+
+
+<p><strong>生产者（Producer）：</strong>MQ中非常重要的概念，向主题（topic）发送消息的就是生产者。</p>
+<p><strong>消费者（Consumer）：</strong>MQ中非常重要的概念，订阅主题（topic）消息的客户端就是消费者，用于处理生产者产生的消息。</p>
+<p><strong>偏移量：</strong><code>偏移量</code>（Consumer Offset）是一种元数据，它是一个不断递增的整数值，用来记录消费者发生<strong>重平衡（Rebalance）</strong>时的位置，以便用来恢复数据。</p>
+<p><strong>broker:</strong> 一个独立的 Kafka 服务器就被称为 <code>broker</code>，broker 接收来自生产者的消息，为消息设置偏移量，并提交消息到磁盘保存。</p>
+<p><strong>broker 集群：</strong>broker 是<code>集群</code> 的组成部分，broker 集群由一个或多个 broker 组成，每个集群都有一个 broker 同时充当了<code>集群控制器</code>的角色（自动从集群的活跃成员中选举出来）。</p>
+<p><strong>重平衡（Rebalance）：</strong>试想，消费组集群中某个实例节点挂掉以后，其他消费者实例自动重新分配topic分区的过程。实现了Kafka的消费端高可用。</p>
+<h1 id="Kafka特性"><a href="#Kafka特性" class="headerlink" title="Kafka特性"></a>Kafka特性</h1><p><code>高吞吐、低延迟</code>：kakfa 最大的特点就是收发消息非常快，kafka 每秒可以处理几十万条消息，它的最低延迟只有几毫秒。</p>
+<p><code>高伸缩性</code>： 每个主题(topic) 包含多个分区(partition)，主题中的分区可以分布在不同的主机(broker)中。</p>
+<p><code>持久性、可靠性</code>： Kafka 能够允许数据的持久化存储，消息被持久化到磁盘，并支持数据备份防止数据丢失，Kafka 底层的数据存储是基于 Zookeeper 存储的，Zookeeper 我们知道它的数据能够持久存储。</p>
+<p><code>容错性</code>： 允许集群中的节点失败，某个节点宕机，Kafka 集群能够正常工作</p>
+<p><code>高并发</code>： 支持数千个客户端同时读写</p>
+<h1 id="Kafka-的消息队列模式"><a href="#Kafka-的消息队列模式" class="headerlink" title="Kafka 的消息队列模式"></a>Kafka 的消息队列模式</h1><blockquote>
+<p>一班消息队列模式分为两种：点对点，发布-订阅者模式。</p>
+</blockquote>
+<p>点对点应该很好理解，就是一个生产者对应一个消费者。</p>
+<p>如果是多个生产者对应多个消费者，即生产者集群—消费者集群这样子，就是发布订阅者模式。<strong>发布订阅者模式也是设计模式之一，同时也是MQ的核心设计思想之一。</strong></p>
+<img src="../imgs/MQ-kafka/16eb068cc433bb21tplv-t2oaga2asx-zoom-in-crop-mark1304000.awebp" alt="img" style="zoom: 80%;" />
+
+
+
+<p>图中所示，一个Kafka集群包含若干个broker、producer、和consumer。</p>
+<p>Kafka通过zk管理集群配置，从而选举leader。在consumer发生变化时（例如某个实例挂掉）进行Rebalance。</p>
+<h1 id="四个核心API"><a href="#四个核心API" class="headerlink" title="四个核心API"></a>四个核心API</h1><p>Producer API，它允许应用程序向一个或多个 topics 上发送消息记录</p>
+<p>Consumer API，允许应用程序订阅一个或多个 topics 并处理为其生成的记录流</p>
+<p>Streams API，它允许应用程序作为流处理器，从一个或多个主题中消费输入流并为其生成输出流，有效的将输入流转换为输出流。</p>
+<p>Connector API，它允许构建和运行将 Kafka 主题连接到现有应用程序或数据系统的可用生产者和消费者</p>
+<h1 id="Kafka-为何如此之快"><a href="#Kafka-为何如此之快" class="headerlink" title="Kafka 为何如此之快"></a>Kafka 为何如此之快</h1><blockquote>
+<p>话不多说，Kafka以高性能、高吞吐量、高并发而闻名，下面介绍一下Kafka的零拷贝与批量、顺序写入。</p>
+</blockquote>
+<h2 id="零拷贝"><a href="#零拷贝" class="headerlink" title="零拷贝"></a>零拷贝</h2><p>广义上的零拷贝，<strong>意思就是减少不必要的拷贝次数</strong>，并不是真正的不需要拷贝。而减少了不必要的拷贝次数，那就是减少了拷贝次数，提高传输效率，同时也省去了CPU切换上下文的时间。</p>
+<p>我直接<strong>偷一张图</strong>来说明应用读写磁盘时，数据拷贝的过程：</p>
+<p>图中可知，普通的数据交互，会发生<strong>CPU的上下文切换</strong>和<strong>用户态到内核态的转换</strong>。</p>
+<p>这样是会对整个数据交互带来一定的开销，一般来说这是正常开销，但在成千上万次数据交互的过程中，这样的开销会占用很大一部分时间。</p>
+<img src="../imgs/MQ-kafka/183a6c6e57734e80862250a93603b56atplv-k3u1fbpfcp-zoom-in-crop-mark1304000.awebp" alt="img" style="zoom: 80%;" />
+
+<p><strong>读数据过程：</strong></p>
+<ul>
+<li>应用程序要读取磁盘数据，调用read()函数从而实现用户态切换内核态，这是第1次状态切换；</li>
+<li>DMA控制器将数据从磁盘拷贝到内核缓冲区，这是第1次DMA拷贝；</li>
+<li>CPU将数据从内核缓冲区复制到用户缓冲区，这是第1次CPU拷贝；</li>
+<li>CPU完成拷贝之后，read()函数返回实现用户态切换用户态，这是第2次状态切换；</li>
+</ul>
+<p><strong>写数据过程：</strong></p>
+<ul>
+<li>应用程序要向网卡写数据，调用write()函数实现用户态切换内核态，这是第1次切换；</li>
+<li>CPU将用户缓冲区数据拷贝到内核缓冲区，这是第1次CPU拷贝；</li>
+<li>DMA控制器将数据从内核缓冲区复制到socket缓冲区，这是第1次DMA拷贝；</li>
+<li>完成拷贝之后，write()函数返回实现内核态切换用户态，这是第2次切换；</li>
+</ul>
+<p><strong>所以有没有一种情况，应用不对数据做处理，那这样还有什么必要进入到应用的缓冲区呢？</strong></p>
+<p>零拷贝出现了。</p>
+<p>零拷贝的实现手段，有mmap+write、sendfile、sendfile+DMA收集、splice等，在此着重讲解前二者。</p>
+<h2 id="mmap"><a href="#mmap" class="headerlink" title="mmap"></a>mmap</h2></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:378435665@qq.com">Louis</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://intlouis.github.io/2022/04/23/MQ-kafka/">https://intlouis.github.io/2022/04/23/MQ-kafka/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://intlouis.github.io" target="_blank">Welcome!</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97-Kafka/">-消息队列 -Kafka</a></div><div class="post_share"><div class="social-share" data-image="/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/2022/04/07/SpringCloud%E2%80%94%E2%80%94%E9%99%90%E6%B5%81%E3%80%81%E7%86%94%E6%96%AD%E4%B9%8BSentinel/"><img class="next-cover" src="/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">微服务浅谈（四）——限流、熔断之Sentinel</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/img.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Louis</div><div class="author-info__description">就职于不知名小公司，无事来此放放屁</div></div><div class="card-info-data is-center"><div class="card-info-data-item"><a href="/archives/"><div class="headline">文章</div><div class="length-num">5</div></a></div><div class="card-info-data-item"><a href="/tags/"><div class="headline">标签</div><div class="length-num">8</div></a></div><div class="card-info-data-item"><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/intLouis"><i class="fab fa-github"></i><span>博主的Github</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/intLouis" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="mailto:378435665@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">I hava a DREAM</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content is-expand"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E6%9C%AF%E8%AF%AD"><span class="toc-number">1.</span> <span class="toc-text">基本术语</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Kafka%E7%89%B9%E6%80%A7"><span class="toc-number">2.</span> <span class="toc-text">Kafka特性</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Kafka-%E7%9A%84%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E6%A8%A1%E5%BC%8F"><span class="toc-number">3.</span> <span class="toc-text">Kafka 的消息队列模式</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E4%B8%AA%E6%A0%B8%E5%BF%83API"><span class="toc-number">4.</span> <span class="toc-text">四个核心API</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Kafka-%E4%B8%BA%E4%BD%95%E5%A6%82%E6%AD%A4%E4%B9%8B%E5%BF%AB"><span class="toc-number">5.</span> <span class="toc-text">Kafka 为何如此之快</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%9B%B6%E6%8B%B7%E8%B4%9D"><span class="toc-number">5.1.</span> <span class="toc-text">零拷贝</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#mmap"><span class="toc-number">5.2.</span> <span class="toc-text">mmap</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2022/04/23/MQ-kafka/" title="消息中间件（1）——之Kafka"><img src="/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="消息中间件（1）——之Kafka"/></a><div class="content"><a class="title" href="/2022/04/23/MQ-kafka/" title="消息中间件（1）——之Kafka">消息中间件（1）——之Kafka</a><time datetime="2022-04-23T14:09:45.000Z" title="发表于 2022-04-23 22:09:45">2022-04-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/04/07/SpringCloud%E2%80%94%E2%80%94%E9%99%90%E6%B5%81%E3%80%81%E7%86%94%E6%96%AD%E4%B9%8BSentinel/" title="微服务浅谈（四）——限流、熔断之Sentinel"><img src="/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="微服务浅谈（四）——限流、熔断之Sentinel"/></a><div class="content"><a class="title" href="/2022/04/07/SpringCloud%E2%80%94%E2%80%94%E9%99%90%E6%B5%81%E3%80%81%E7%86%94%E6%96%AD%E4%B9%8BSentinel/" title="微服务浅谈（四）——限流、熔断之Sentinel">微服务浅谈（四）——限流、熔断之Sentinel</a><time datetime="2022-04-07T14:52:06.000Z" title="发表于 2022-04-07 22:52:06">2022-04-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/03/28/SpringCloud-%E7%BD%91%E5%85%B3/" title="微服务浅谈（三）——Gateway网关"><img src="/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="微服务浅谈（三）——Gateway网关"/></a><div class="content"><a class="title" href="/2022/03/28/SpringCloud-%E7%BD%91%E5%85%B3/" title="微服务浅谈（三）——Gateway网关">微服务浅谈（三）——Gateway网关</a><time datetime="2022-03-27T16:39:32.000Z" title="发表于 2022-03-28 00:39:32">2022-03-28</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/03/15/SpringCloud-OpenFeign/" title="微服务浅谈（二）——服务调用&amp;OpenFeign"><img src="/imgs/SpringCloud-OpenFeign/007ZVs3Jgy1h0l2o58oh0j31kw1kwwkv.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="微服务浅谈（二）——服务调用&amp;OpenFeign"/></a><div class="content"><a class="title" href="/2022/03/15/SpringCloud-OpenFeign/" title="微服务浅谈（二）——服务调用&amp;OpenFeign">微服务浅谈（二）——服务调用&amp;OpenFeign</a><time datetime="2022-03-14T16:41:15.000Z" title="发表于 2022-03-15 00:41:15">2022-03-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/03/13/SpringCloud_Nacos/" title="微服务浅谈（一）——Nacos"><img src="/imgs/SpringCloud_Nacos/007ZVs3Jgy1h0bgtys74hj31kw1kw0z8.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="微服务浅谈（一）——Nacos"/></a><div class="content"><a class="title" href="/2022/03/13/SpringCloud_Nacos/" title="微服务浅谈（一）——Nacos">微服务浅谈（一）——Nacos</a><time datetime="2022-03-13T11:31:08.440Z" title="发表于 2022-03-13 19:31:08">2022-03-13</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url('/imgs/007ZVs3Jgy1h0cpba32yzj30zk0zkk0i.jpg')"><div id="footer-wrap"><div class="copyright">&copy;2022 By Louis</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text">You Hava a DREAM ?</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"></div><script defer="defer" id="ribbon" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-ribbon.min.js" size="150" alpha="0.6" zIndex="-1" mobile="false" data-click="true"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
