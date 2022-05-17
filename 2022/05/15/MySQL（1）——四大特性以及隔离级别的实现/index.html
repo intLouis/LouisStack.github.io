@@ -1,0 +1,336 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>MySQL（1）——四大特性以及隔离级别的实现 | Welcome!</title><meta name="keywords" content="数据库,MySQL,锁"><meta name="author" content="Louis,378435665@qq.com"><meta name="copyright" content="Louis"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="本文以MySQL的InnoDB为例讲解四大特性（原子性、隔离性、一致性、持久性）以及四大隔离级别的实现。 两种日志bin logbin log可以抽象地理解成SQL语句，以二进制的形式记录对数据修改的逻辑日志。常用于数据同步，数据恢复等。 binlog是mysql的逻辑日志，并且由Server层进行记录，使用任何存储引擎的mysql数据库都会记录binlog日志。 binlog刷盘 binlog会">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL（1）——四大特性以及隔离级别的实现">
+<meta property="og:url" content="https://intlouis.github.io/2022/05/15/MySQL%EF%BC%881%EF%BC%89%E2%80%94%E2%80%94%E5%9B%9B%E5%A4%A7%E7%89%B9%E6%80%A7%E4%BB%A5%E5%8F%8A%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="Welcome!">
+<meta property="og:description" content="本文以MySQL的InnoDB为例讲解四大特性（原子性、隔离性、一致性、持久性）以及四大隔离级别的实现。 两种日志bin logbin log可以抽象地理解成SQL语句，以二进制的形式记录对数据修改的逻辑日志。常用于数据同步，数据恢复等。 binlog是mysql的逻辑日志，并且由Server层进行记录，使用任何存储引擎的mysql数据库都会记录binlog日志。 binlog刷盘 binlog会">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://intlouis.github.io/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg">
+<meta property="article:published_time" content="2022-05-15T05:11:16.000Z">
+<meta property="article:modified_time" content="2022-05-17T16:20:03.473Z">
+<meta property="article:author" content="Louis">
+<meta property="article:tag" content="数据库">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="锁">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://intlouis.github.io/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://intlouis.github.io/2022/05/15/MySQL%EF%BC%881%EF%BC%89%E2%80%94%E2%80%94%E5%9B%9B%E5%A4%A7%E7%89%B9%E6%80%A7%E4%BB%A5%E5%8F%8A%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9E%E7%8E%B0/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery@2/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery@2/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'MySQL（1）——四大特性以及隔离级别的实现',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2022-05-18 00:20:03'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 5.4.1"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/img.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data is-center"><div class="data-item"><a href="/archives/"><div class="headline">文章</div><div class="length-num">6</div></a></div><div class="data-item"><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a></div><div class="data-item"><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Welcome!</a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">MySQL（1）——四大特性以及隔离级别的实现</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-05-15T05:11:16.000Z" title="发表于 2022-05-15 13:11:16">2022-05-15</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2022-05-17T16:20:03.473Z" title="更新于 2022-05-18 00:20:03">2022-05-18</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">4.2k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>13分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="MySQL（1）——四大特性以及隔离级别的实现"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><p>本文以MySQL的InnoDB为例讲解四大特性（原子性、隔离性、一致性、持久性）以及四大隔离级别的实现。</p>
+<h1 id="两种日志"><a href="#两种日志" class="headerlink" title="两种日志"></a>两种日志</h1><h2 id="bin-log"><a href="#bin-log" class="headerlink" title="bin log"></a>bin log</h2><p>bin log可以抽象地理解成SQL语句，以二进制的形式记录对数据修改的逻辑日志。常用于数据同步，数据恢复等。</p>
+<p>binlog是mysql的逻辑日志，并且由Server层进行记录，使用任何存储引擎的mysql数据库都会记录binlog日志。</p>
+<p><strong>binlog刷盘</strong></p>
+<p>binlog会在特定的时机进行<strong>刷盘</strong>，刷盘时机由<strong>sync_binlog</strong>参数来设定。刷盘即将事务commit到内存中的数据写入磁盘。</p>
+<p><em>sync_binlog参数值如下：</em></p>
+<p><em>0：每次事务commit，会将数据写入系统的page cache中，会将由系统自行判断何时写入磁盘；</em></p>
+<p><em>1：每次commit的时候都要将binlog写入磁盘；</em></p>
+<p><em>N：每N个事务都commit，才会将binlog写入磁盘。</em></p>
+<p>不同的参数带来系统性能影响是不一样的，参数为0则性能较高，但是存在数据一致性和持久性的问题。参数为1，最大限度保证数据的安全性，但是频繁刷盘带来性能下降问题。参数为N，则需要视业务场景进行设置，需要在性能与数据安全之间做一个权衡。</p>
+<p>但一般情况下，基于保守考虑，参数默认设置为1，保证数据的安全。</p>
+<h2 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h2><p>redo log包括两部分：一个是内存中的**日志缓冲(redo log buffer)<strong>，另一个是磁盘上的</strong>日志文件(redo log file)**，mysql每执行一条DML语句，先将记录写入redo log buffer，后续某个时间点再一次性将多个操作记录经过操作系统缓存（os buffer）通过调用函数fsync写到redo log file，完成持久化。</p>
+<p>这种先写日志，再写磁盘的技术就是MySQL里经常说到的WAL(Write-Ahead Logging) 技术。<strong>在持久化一个数据页之前，先将内存中相应的日志页持久化。</strong></p>
+<p><em>同理，redo log的写入磁盘时机也有参数<strong>innodb_flush_log_at_trx_commit</strong>设置</em></p>
+<p><img src="/imgs/MySQL%EF%BC%881%EF%BC%89%E2%80%94%E2%80%94%E5%9B%9B%E5%A4%A7%E7%89%B9%E6%80%A7%E4%BB%A5%E5%8F%8A%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9E%E7%8E%B0/v2-213622cb332c35e77eea6667a471d8ef_720w.jpg" alt="img"></p>
+<p><img src="/imgs/MySQL%EF%BC%881%EF%BC%89%E2%80%94%E2%80%94%E5%9B%9B%E5%A4%A7%E7%89%B9%E6%80%A7%E4%BB%A5%E5%8F%8A%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9E%E7%8E%B0/v2-41365bae03d3607ea95ff74246356a99_720w.jpg" alt="img"></p>
+<p>参数为0时，1秒前的数据都在redo log buffer中，并没有写入到os buffer，有宕机数据丢失的风险，但是性能较高。</p>
+<p>参数为1时，是commit的同时写入到os buffer并且调用fsync写入磁盘（redo log file）。</p>
+<p>参数为2时，每次提交都写入到os buffer，这样MySQL服务宕机也不会造成数据丢失，但是如果是断电，也会导致数据丢失。</p>
+<p>redo log记录的数据的变更，redo log实际上记录数据页的变更，而这种变更记录是没必要全部保存，因此redo log实现上采用了大小固定，循环写入的方式，当写到结尾时，会回到开头循环写日志。</p>
+<p><strong>当数据罗盘后，redo log的数据会被覆盖。</strong></p>
+<img src="/imgs/MySQL（1）——四大特性以及隔离级别的实现/image-20220515195738725.png" alt="image-20220515195738725" style="zoom:50%;" />
+
+
+
+<p>整体来看，redo log的存在是为了临时提交到内存的数据不丢失而设计。这也是**Write-Ahead Log(预先日志持久化)**的实现，先将数据以redo log file的形式持久化后，等数据真正写入磁盘（data）后，才算一次事务真正的持久化完成。redo log为事务持久化提供了提高了可靠性。</p>
+<p>如下图所示：</p>
+<p><img src="/imgs/MySQL%EF%BC%881%EF%BC%89%E2%80%94%E2%80%94%E5%9B%9B%E5%A4%A7%E7%89%B9%E6%80%A7%E4%BB%A5%E5%8F%8A%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9E%E7%8E%B0/webp.webp" alt="img"></p>
+<p><strong>bin log 和 redo log的区别</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>bin log</th>
+<th>redo log</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>文件大小</td>
+<td>可通过参数配置每个文件的大小</td>
+<td>每个redo log 的大小是固定的，循环写入。</td>
+</tr>
+<tr>
+<td>实现方式</td>
+<td>Server层面实现的，所有引擎都可以适用bin log日志</td>
+<td>InnoDB引擎层面实现的，不是所有引擎都有</td>
+</tr>
+<tr>
+<td>记录方式</td>
+<td>通过追加的方式记录，当文件超过设定值，则会新建一个文件继续追加。</td>
+<td>采用循环写的方式，</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>崩溃恢复</td>
+<td>主从复制以及数据恢复。</td>
+</tr>
+</tbody></table>
+<h2 id="bin-log-以及-redo-log存在的意义"><a href="#bin-log-以及-redo-log存在的意义" class="headerlink" title="bin log 以及 redo log存在的意义"></a>bin log 以及 redo log存在的意义</h2><p><strong>bin log 与 redo log 是相辅相成的存在，bin log 记录了几乎全量的逻辑日志，保证断电宕机后的数据恢复。而redo log 是为当前一次事务持久化提供保障，两者同时配合，才能将数据安全性达到最高。</strong></p>
+<h1 id="两阶段提交"><a href="#两阶段提交" class="headerlink" title="两阶段提交"></a>两阶段提交</h1><h2 id="什么是crash-safe能力？"><a href="#什么是crash-safe能力？" class="headerlink" title="什么是crash-safe能力？"></a>什么是crash-safe能力？</h2><p>我们知道redo log，保证了MySQL宕机后恢复数据的能力。</p>
+<p>即使宕机，重启后系统会自动检查redo log，将未写入到MySQL的数据从redo log中恢复到MySQL中去。</p>
+<h2 id="两阶段提交-1"><a href="#两阶段提交-1" class="headerlink" title="两阶段提交"></a>两阶段提交</h2><p>两阶段提交实际上也是最大限度地保证宕机后数据可以重新恢复。</p>
+<p>主要过程如下图:</p>
+<img src="/imgs/MySQL（1）——四大特性以及隔离级别的实现/image-20220516230800486.png" alt="image-20220516230800486" style="zoom: 67%;" />
+
+
+
+<ol>
+<li>执行器调用存储引擎接口，存储引擎将修改更新到内存中后，将修改操作写到redo log里面，此时redo log处于prepare状态；</li>
+<li>存储引擎告知执行器执行完毕，执行器开始将操作写入到bin log中，写完后调用存储引擎的接口提交事务；</li>
+<li>存储引擎将redo log的状态置为commit。</li>
+</ol>
+<h2 id="为什么需要两阶段提交？"><a href="#为什么需要两阶段提交？" class="headerlink" title="为什么需要两阶段提交？"></a>为什么需要两阶段提交？</h2><p>bin log其中之一的功能就是恢复数据，如误删数据，就需要从bin log中恢复。</p>
+<p>为了保证Bin log 和redo log上的数据一致。</p>
+<p>假设redo log和binlog分别提交，可能会造成用日志恢复出来的数据和原来数据不一致的情况。</p>
+<ol>
+<li><p>假设先写redo log再写binlog，即redo log没有prepare阶段，写完直接置为commit状态，然后再写binlog。那么如果写完redo log后Mysql宕机了，<strong>重启后系统自动用redo log 恢复出来的数据就会比binlog记录的数据多出一些数据</strong>，这就会造成磁盘上数据库数据页和binlog的不一致，下次需要用到binlog恢复误删的数据时，就会发现恢复后的数据和原来的数据不一致。</p>
+</li>
+<li><p>假设先写binlog再写redolog。如果还未写redo log 而且Mysql宕机了。那当前事务无效，但是<strong>binlog上的记录就会比磁盘上数据页的记录多出一些数据出来</strong>，下次用binlog恢复数据，就会发现恢复后的数据和原来的数据不一致。</p>
+</li>
+</ol>
+<p><strong>简单说，redo log 和 binlog 都可以用于表示事务的提交状态，而两阶段提交就是让这两个状态保持逻辑上的一致。</strong></p>
+<h1 id="四大特性"><a href="#四大特性" class="headerlink" title="四大特性"></a>四大特性</h1><p>原子性：事务为最小的执行单位，不可再分，一个事物要么全部成功，要么全部失败。</p>
+<p>隔离性：多个事务并发执行时，事物之间是互相独立不影响的。</p>
+<p>一致性：数据前后合法，这个不做过多讲解，与编码和业务强相关。</p>
+<p>持久性：事务提交后，它的修改应当是永久的，即使数据库宕机也不会对其有影响。</p>
+<h2 id="原子性的实现"><a href="#原子性的实现" class="headerlink" title="原子性的实现"></a>原子性的实现</h2><p><strong>undo log</strong></p>
+<p>数据库事务四大特性中有一个是原子性，具体来说就是 原子性是指对数据库的一系列操作，要么全部成功，要么全部失败，不可能出现部分成功的情况。</p>
+<p>实际上，原子性底层就是通过undo log实现的。undo log主要记录了数据的逻辑变化，比如一条INSERT语句，对应一条DELETE的undo log，对于每个UPDATE语句，对应一条相反的UPDATE的undo log，这样在发生错误时，就能回滚到事务之前的数据状态</p>
+<h2 id="持久性的实现"><a href="#持久性的实现" class="headerlink" title="持久性的实现"></a>持久性的实现</h2><p>当数据修改时，<strong>除了</strong>修改Buffer Pool中的数据，<strong>还会</strong>在redo log记录这次操作；当事务提交时，会调用fsync接口对redo log进行刷盘。如果MySQL宕机，重启时可以读取redo log中的数据，对数据库进行恢复。redo log采用的是WAL（Write-ahead logging，<strong>预写式日志</strong>），所有修改<strong>先</strong>写入日志，<strong>再</strong>更新到Buffer Pool，保证了数据不会因MySQL宕机而丢失，从而满足了持久性要求。</p>
+<p>redo log在上面有详细的介绍，此处就不过多赘述。</p>
+<h2 id="一致性的实现"><a href="#一致性的实现" class="headerlink" title="一致性的实现"></a>一致性的实现</h2><p>概念描述：<strong>一致性是指事物执行结束后，数据库的完整性没有被破坏，事务执行的前后都是合法的数据状态</strong>。数据库的完整性包括但是不限于：<br><strong>实体完整性</strong>（如行的主键存在且唯一）<br><strong>列完整性</strong>（如字段的类型，大小，长度符合要求），<br><strong>外键约束</strong>（外键约束还存在）<br><strong>用户自定义完整性</strong>（如转账前后，两个账户的和应该是不变的）</p>
+<p>可以说，<strong>一致性是事物追求的最终目标</strong>，前面提到的原子性，隔离性，持久性都是为了保证数据库的一致性。此外除了数据库底层的保障，一致性的实现也需要应用层的保障。</p>
+<ul>
+<li>保证原子性、持久性和隔离性，如果这些特性无法保证，事务的一致性也无法保证</li>
+<li><code>数据库本身提供保障</code>，例如不允许向整形列插入字符串值、字符串长度不能超过列的限制等</li>
+<li><code>应用层面进行保障</code>，例如如果转账操作只扣除转账者的余额，而没有增加接收者的余额，无论数据库实现的多么完美，也无法保证状态的一致</li>
+</ul>
+<h2 id="隔离性的实现（重点）"><a href="#隔离性的实现（重点）" class="headerlink" title="隔离性的实现（重点）"></a>隔离性的实现（重点）</h2><p><strong>隔离性追求的是并发情形下事务之间不会相互干扰</strong>，简单起见，我们仅考虑最简单的读操作和写操作(暂时不考虑带锁读等特殊操作)，那么隔离性的探讨，主要可以分为两个方面：</p>
+<ul>
+<li>(一个事务)写操作对(另一个事务)写操作的影响：锁机制保证隔离性</li>
+<li>(一个事务)写操作对(另一个事务)读操作的影响：MVCC保证隔离性</li>
+</ul>
+<p>总的来说，隔离性是由MVCC+锁机制来实现。</p>
+<h1 id="锁机制"><a href="#锁机制" class="headerlink" title="锁机制"></a>锁机制</h1><p>按照粒度，分为表锁与行锁：<br>MyISAM 支持表锁，InnoDB 支持表锁和行级锁，<strong>默认是行级锁</strong>。<br><strong>表级锁</strong>：开销小，加锁快，不会出现死锁。锁定粒度大，发送锁冲突的概率比较高，并发处理效果较低。<br><strong>行级锁</strong>： 开销大，加锁慢，会出现死锁，锁定粒度较大，发生锁冲突的概率会小一点，并发处理的效果高</p>
+<h1 id="事务并发问题"><a href="#事务并发问题" class="headerlink" title="事务并发问题"></a>事务并发问题</h1><p>有T1，T2两个事务。</p>
+<p><strong>脏读：</strong>T1读取到T2修改但未提交的数据，但T2又回滚了，此时T1读取的就是无效的脏数据。</p>
+<p><strong>幻读：</strong>T1查询到的结果集后，T2增加一条数据，这条数据恰好满足T1的查询条件，当T1再次使用相同条件查询，会发现两次查询结果集数量不一致。好似发生了幻觉。</p>
+<p><strong>不可重复读：</strong>事务中可以查询到别的事务当前提交的数据，即可能发声两次同样的查询返回不一样的结果集。</p>
+<h1 id="MySQL四种隔离级别"><a href="#MySQL四种隔离级别" class="headerlink" title="MySQL四种隔离级别"></a>MySQL四种隔离级别</h1><p><strong>读未提交</strong></p>
+<p>事务可以读到其他事务<strong>修改但未提交的数据</strong>，此隔离级别会发生脏读、幻读、不可重复度等并发问题。</p>
+<p><strong>读已提交</strong></p>
+<p>只能看到其他事务已经提交的数据，此隔离级别会发生不可重复、幻读度问题。</p>
+<p><strong>可重复读</strong></p>
+<p>解决了脏读问题，同一个事务多次查询同一数据结果一致。但是并未解决幻读问题。</p>
+<p> <strong>串行化</strong></p>
+<p>是最高的隔离级别，通过强制事务串行化执行，避免了前面所说到的幻读的问题。就是可串行化 会在读取的每一行数据上都加上锁，但是这样会导致超时和锁争用问题。</p>
+<h1 id="MVCC"><a href="#MVCC" class="headerlink" title="MVCC"></a>MVCC</h1><blockquote>
+<p>在早期的数据库中，只有读读之间的操作才可以并发执行，读写，写读，写写操作都要阻塞，这样就会导致MySQL的并发性能极差。</p>
+<p>采用了MVCC机制后，只有写写之间相互阻塞，其他三种操作都可以并行，这样就可以提高了MySQL的并发性能。</p>
+</blockquote>
+<h2 id="ReadView"><a href="#ReadView" class="headerlink" title="ReadView"></a><strong>ReadView</strong></h2><p>ReadView可以理解为数据库中某一个时刻所有未提交事务的快照。ReadView有几个重要的参数：</p>
+<ul>
+<li>m_ids：表示生成ReadView时，当前系统<strong>正在活跃的读写事务的事务Id列表</strong>。</li>
+<li>min_trx_id：表示生成ReadView时，当前系统中<strong>活跃的读写事务的最小事务Id</strong>。</li>
+<li>max_trx_id：表示生成ReadView时，当前时间戳InnoDB<strong>将在下一次分配的事务id</strong>。</li>
+<li>creator_trx_id：当前事务id。</li>
+</ul>
+<p>所以当创建ReadView时，可以知道这个时间点上未提交事务的所有信息。</p>
+<h2 id="隐藏列"><a href="#隐藏列" class="headerlink" title="隐藏列"></a><strong>隐藏列</strong></h2><p>InnoDB存储引擎中，它的聚簇索引记录中都包含两个必要的隐藏列，分别是：</p>
+<ul>
+<li>trx_id：事务Id，每次一个事务对某条聚簇索引记录进行改动时，都会把该事务的<code>事务id</code>赋值给<code>trx_id</code>隐藏列。</li>
+<li>roll_pointer：回滚指针，每次对某条聚簇索引记录进行改动时，都会把旧的版本写入到<code>undo log</code>中，然后这个隐藏列就相当于一个指针，可以通过它来找到该记录修改前的信息。</li>
+</ul>
+<h2 id="版本链"><a href="#版本链" class="headerlink" title="版本链"></a>版本链</h2><p>假如数据初始状态如下</p>
+<img src="/imgs/MySQL（1）——四大特性以及隔离级别的实现/317e91e1-1ee1-42ad-9412-9098d5c6a9ad.png" alt="img" style="zoom: 33%;" />
+
+<p><strong>数据第一次被修改时：</strong></p>
+<img src="/imgs/MySQL（1）——四大特性以及隔离级别的实现/c52ff79f-10e6-46cb-b5d4-3c9cbcc1934a.png" alt="img" style="zoom: 33%;" />
+
+<p><strong>数据第二次被修改时：</strong></p>
+<img src="/imgs/MySQL（1）——四大特性以及隔离级别的实现/6a276e7a-b0da-4c7b-bdf7-c0c7b7b3b31c.png" alt="img" style="zoom:33%;" />
+
+<p>由图可知，每一次修改回滚指针都会指向相应的undo_log。</p>
+<h2 id="实现机制"><a href="#实现机制" class="headerlink" title="实现机制"></a>实现机制</h2><p>在四个隔离级别中，<strong>读未提交</strong>是没有进行版本控制的。而<strong>串行化</strong>则是严格遵守先后顺序执行事务，不需要进行版本控制。</p>
+<p>而读已提交和可重复读这两个隔离级别则使用到了MVCC。下面就来展开说说。</p>
+<p><strong>读已提交的实现</strong></p>
+<p>在这个隔离级别中，当前事务是可以读取到所有事物已经提交的修改，即，<strong>所有事物提交的修改对所有事务可见。</strong></p>
+<p>每次查询都会生成一个<strong>ReadView</strong>，若在当前事务中查询，则会查询到最新已提交的修改。</p>
+<p>由于每次查询都会生成readview，即每一次查询的数据都可能不一样，所以不可避免会有不可重复读的问题。</p>
+<p>只要解决了不可重复读的问题，就达到了可重复读这个隔离级别。</p>
+<p>如何解决？</p>
+<p><strong>可重复读的实现</strong></p>
+<p>关键就在于，在可重复读的这个隔离级别下，<strong>只会在事务开始后第一次读取数据时生成一个 Read View</strong></p>
+<p>所以在一个事务中，只有唯一一个ReadView，所以从始至终它读取到的数据都是一致的。无</p>
+<p>论在此过程中其他事务是否提交，当前事务可见的数据只有一个版本，即开启事务读取的版本。</p>
+<p>详细原理参照本篇文章：</p>
+<p><a target="_blank" rel="noopener" href="https://javaguide.cn/database/mysql/innodb-implementation-of-mvcc.html#mvcc-%E8%A7%A3%E5%86%B3%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%E9%97%AE%E9%A2%98">https://javaguide.cn/database/mysql/innodb-implementation-of-mvcc.html#mvcc-%E8%A7%A3%E5%86%B3%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%E9%97%AE%E9%A2%98</a></p>
+<h2 id="解决幻读问题"><a href="#解决幻读问题" class="headerlink" title="解决幻读问题"></a>解决幻读问题</h2><p>我们知道，幻读是两次读取的结果集数量不一致。</p>
+<h3 id="当前读"><a href="#当前读" class="headerlink" title="当前读"></a>当前读</h3><p>它读取的数据库记录，都是<code>当前最新</code>的<code>版本</code>，会对当前读取的数据进行<code>加锁</code>，防止其他事务修改数据。是<code>悲观锁</code>的一种操作。</p>
+<p>如下操作都是当前读：</p>
+<ul>
+<li>select lock in share mode (共享锁)</li>
+<li>select for update (排他锁)</li>
+<li>update (排他锁)</li>
+<li>insert (排他锁)</li>
+<li>delete (排他锁)</li>
+<li>串行化事务隔离级别</li>
+</ul>
+<h3 id="快照读"><a href="#快照读" class="headerlink" title="快照读"></a>快照读</h3><p>快照读的实现是基于<code>多版本</code>并发控制，即MVCC，既然是多版本，那么快照读读到的数据不一定是当前最新的数据，有可能是之前<code>历史版本</code>的数据。</p>
+<p>如下操作是快照读：</p>
+<ul>
+<li>不加锁的select操作（注：事务级别不是串行化）</li>
+</ul>
+<p><strong>在普通SELECT的操作中</strong>，会使用生成一次ReadView的方式来防止幻读。</p>
+<p><strong>2、执行 select…for update/lock in share mode、insert、update、delete 等当前读</strong></p>
+<p>在当前读下，读取的都是最新的数据，如果其它事务有插入新的记录，并且刚好在当前事务查询范围内，就会产生幻读！<code>InnoDB</code> 使用 <a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/5.7/en/innodb-locking.html#innodb-next-key-locks">Next-key Lock</a> 来防止这种情况。当执行当前读时，会锁定读取到的记录的同时，锁定它们的间隙，防止其它事务在查询范围内插入数据。只要我不让你插入，就不会发生幻读。</p>
+<p>next-key lock可以理解为行锁+间隙锁。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:378435665@qq.com">Louis</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://intlouis.github.io/2022/05/15/MySQL%EF%BC%881%EF%BC%89%E2%80%94%E2%80%94%E5%9B%9B%E5%A4%A7%E7%89%B9%E6%80%A7%E4%BB%A5%E5%8F%8A%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9E%E7%8E%B0/">https://intlouis.github.io/2022/05/15/MySQL%EF%BC%881%EF%BC%89%E2%80%94%E2%80%94%E5%9B%9B%E5%A4%A7%E7%89%B9%E6%80%A7%E4%BB%A5%E5%8F%8A%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9E%E7%8E%B0/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://intlouis.github.io" target="_blank">Welcome!</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="post-meta__tags" href="/tags/MySQL/">MySQL</a><a class="post-meta__tags" href="/tags/%E9%94%81/">锁</a></div><div class="post_share"><div class="social-share" data-image="/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/2022/04/23/MQ-kafka/"><img class="next-cover" src="/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">消息中间件（1）——之Kafka</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/img.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Louis</div><div class="author-info__description">就职于不知名小公司，无事来此放放屁</div></div><div class="card-info-data is-center"><div class="card-info-data-item"><a href="/archives/"><div class="headline">文章</div><div class="length-num">6</div></a></div><div class="card-info-data-item"><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a></div><div class="card-info-data-item"><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/intLouis"><i class="fab fa-github"></i><span>博主的Github</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/intLouis" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="mailto:378435665@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">I hava a DREAM</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content is-expand"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%A4%E7%A7%8D%E6%97%A5%E5%BF%97"><span class="toc-number">1.</span> <span class="toc-text">两种日志</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#bin-log"><span class="toc-number">1.1.</span> <span class="toc-text">bin log</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#redo-log"><span class="toc-number">1.2.</span> <span class="toc-text">redo log</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#bin-log-%E4%BB%A5%E5%8F%8A-redo-log%E5%AD%98%E5%9C%A8%E7%9A%84%E6%84%8F%E4%B9%89"><span class="toc-number">1.3.</span> <span class="toc-text">bin log 以及 redo log存在的意义</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4"><span class="toc-number">2.</span> <span class="toc-text">两阶段提交</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFcrash-safe%E8%83%BD%E5%8A%9B%EF%BC%9F"><span class="toc-number">2.1.</span> <span class="toc-text">什么是crash-safe能力？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4-1"><span class="toc-number">2.2.</span> <span class="toc-text">两阶段提交</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4%EF%BC%9F"><span class="toc-number">2.3.</span> <span class="toc-text">为什么需要两阶段提交？</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E5%A4%A7%E7%89%B9%E6%80%A7"><span class="toc-number">3.</span> <span class="toc-text">四大特性</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%9F%E5%AD%90%E6%80%A7%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.1.</span> <span class="toc-text">原子性的实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8C%81%E4%B9%85%E6%80%A7%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.2.</span> <span class="toc-text">持久性的实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.3.</span> <span class="toc-text">一致性的实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%9A%94%E7%A6%BB%E6%80%A7%E7%9A%84%E5%AE%9E%E7%8E%B0%EF%BC%88%E9%87%8D%E7%82%B9%EF%BC%89"><span class="toc-number">3.4.</span> <span class="toc-text">隔离性的实现（重点）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%94%81%E6%9C%BA%E5%88%B6"><span class="toc-number">4.</span> <span class="toc-text">锁机制</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8B%E5%8A%A1%E5%B9%B6%E5%8F%91%E9%97%AE%E9%A2%98"><span class="toc-number">5.</span> <span class="toc-text">事务并发问题</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL%E5%9B%9B%E7%A7%8D%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="toc-number">6.</span> <span class="toc-text">MySQL四种隔离级别</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#MVCC"><span class="toc-number">7.</span> <span class="toc-text">MVCC</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#ReadView"><span class="toc-number">7.1.</span> <span class="toc-text">ReadView</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%9A%90%E8%97%8F%E5%88%97"><span class="toc-number">7.2.</span> <span class="toc-text">隐藏列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%89%88%E6%9C%AC%E9%93%BE"><span class="toc-number">7.3.</span> <span class="toc-text">版本链</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E7%8E%B0%E6%9C%BA%E5%88%B6"><span class="toc-number">7.4.</span> <span class="toc-text">实现机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E5%B9%BB%E8%AF%BB%E9%97%AE%E9%A2%98"><span class="toc-number">7.5.</span> <span class="toc-text">解决幻读问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BD%93%E5%89%8D%E8%AF%BB"><span class="toc-number">7.5.1.</span> <span class="toc-text">当前读</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BF%AB%E7%85%A7%E8%AF%BB"><span class="toc-number">7.5.2.</span> <span class="toc-text">快照读</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2022/05/15/MySQL%EF%BC%881%EF%BC%89%E2%80%94%E2%80%94%E5%9B%9B%E5%A4%A7%E7%89%B9%E6%80%A7%E4%BB%A5%E5%8F%8A%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="MySQL（1）——四大特性以及隔离级别的实现"><img src="/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="MySQL（1）——四大特性以及隔离级别的实现"/></a><div class="content"><a class="title" href="/2022/05/15/MySQL%EF%BC%881%EF%BC%89%E2%80%94%E2%80%94%E5%9B%9B%E5%A4%A7%E7%89%B9%E6%80%A7%E4%BB%A5%E5%8F%8A%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9E%E7%8E%B0/" title="MySQL（1）——四大特性以及隔离级别的实现">MySQL（1）——四大特性以及隔离级别的实现</a><time datetime="2022-05-15T05:11:16.000Z" title="发表于 2022-05-15 13:11:16">2022-05-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/04/23/MQ-kafka/" title="消息中间件（1）——之Kafka"><img src="/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="消息中间件（1）——之Kafka"/></a><div class="content"><a class="title" href="/2022/04/23/MQ-kafka/" title="消息中间件（1）——之Kafka">消息中间件（1）——之Kafka</a><time datetime="2022-04-23T14:09:45.000Z" title="发表于 2022-04-23 22:09:45">2022-04-23</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/04/07/SpringCloud%E2%80%94%E2%80%94%E9%99%90%E6%B5%81%E3%80%81%E7%86%94%E6%96%AD%E4%B9%8BSentinel/" title="微服务浅谈（四）——限流、熔断之Sentinel"><img src="/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="微服务浅谈（四）——限流、熔断之Sentinel"/></a><div class="content"><a class="title" href="/2022/04/07/SpringCloud%E2%80%94%E2%80%94%E9%99%90%E6%B5%81%E3%80%81%E7%86%94%E6%96%AD%E4%B9%8BSentinel/" title="微服务浅谈（四）——限流、熔断之Sentinel">微服务浅谈（四）——限流、熔断之Sentinel</a><time datetime="2022-04-07T14:52:06.000Z" title="发表于 2022-04-07 22:52:06">2022-04-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/03/28/SpringCloud-%E7%BD%91%E5%85%B3/" title="微服务浅谈（三）——Gateway网关"><img src="/imgs/007ZVs3Jgy1h0qz8hqf8cj30go0go75i.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="微服务浅谈（三）——Gateway网关"/></a><div class="content"><a class="title" href="/2022/03/28/SpringCloud-%E7%BD%91%E5%85%B3/" title="微服务浅谈（三）——Gateway网关">微服务浅谈（三）——Gateway网关</a><time datetime="2022-03-27T16:39:32.000Z" title="发表于 2022-03-28 00:39:32">2022-03-28</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/03/15/SpringCloud-OpenFeign/" title="微服务浅谈（二）——服务调用&amp;OpenFeign"><img src="/imgs/SpringCloud-OpenFeign/007ZVs3Jgy1h0l2o58oh0j31kw1kwwkv.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="微服务浅谈（二）——服务调用&amp;OpenFeign"/></a><div class="content"><a class="title" href="/2022/03/15/SpringCloud-OpenFeign/" title="微服务浅谈（二）——服务调用&amp;OpenFeign">微服务浅谈（二）——服务调用&amp;OpenFeign</a><time datetime="2022-03-14T16:41:15.000Z" title="发表于 2022-03-15 00:41:15">2022-03-15</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url('/imgs/007ZVs3Jgy1h0cpba32yzj30zk0zkk0i.jpg')"><div id="footer-wrap"><div class="copyright">&copy;2022 By Louis</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text">You Hava a DREAM ?</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.js"></script><script>var preloader = {
+  endLoading: () => {
+    document.body.style.overflow = 'auto';
+    document.getElementById('loading-box').classList.add("loaded")
+  },
+  initLoading: () => {
+    document.body.style.overflow = '';
+    document.getElementById('loading-box').classList.remove("loaded")
+
+  }
+}
+window.addEventListener('load',preloader.endLoading())</script><div class="js-pjax"></div><script defer="defer" id="ribbon" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-ribbon.min.js" size="150" alpha="0.6" zIndex="-1" mobile="false" data-click="true"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
